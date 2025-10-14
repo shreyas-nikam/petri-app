@@ -3,7 +3,7 @@ import streamlit as st
 def init_state():
     defaults = {
         # instruction UI
-        "mode": "Choose from list",
+        "mode": "Choose from predefined probes",
         "chosen_instructions": [],
         "typed_instructions": "",
         # process/run

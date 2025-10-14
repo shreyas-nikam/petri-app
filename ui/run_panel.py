@@ -2,6 +2,7 @@ import os
 import queue
 import multiprocessing as mp
 from pathlib import Path
+import json
 
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
@@ -10,16 +11,20 @@ from core.utils import new_run_dir
 from core.worker import _worker_eval
 
 def _collect_instructions() -> list[str]:
-    if st.session_state.mode == "Choose from list":
+    if st.session_state.mode == "Choose from predefined probes":
         return st.session_state.chosen_instructions or []
     # split by line, strip bullets/whitespace
-    return [ln.strip("- ").strip() for ln in st.session_state.typed_instructions.splitlines() if ln.strip()]
+    return st.session_state.typed_instructions
 
 def _on_run():
+    print("started run")
     if st.session_state.is_running:
         return
 
+    print("collecting instructions")
     instr = _collect_instructions()
+    print("instructions collected")
+    print(instr)
     if not instr:
         st.error("Please provide at least one instruction (choose or type).")
         return
@@ -71,7 +76,7 @@ def _stream_outputs():
         try:
             while True:
                 tag, payload = st.session_state.log_q.get_nowait()
-                if tag in ("OUT", "ERR", "LOG"):
+                if tag in ("OUT", "ERR"):
                     st.session_state.lines.append(payload)
                 elif tag == "DONE":
                     st.session_state.exitcode = int(payload)
@@ -81,12 +86,11 @@ def _stream_outputs():
             pass
 
 def run_panel():
-    st.subheader("2) Run")
     c1, c2 = st.columns([1, 1])
     with c1:
-        st.button("▶️ Run Eval", type="primary", use_container_width=True, disabled=st.session_state.is_running, on_click=_on_run)
+        st.button("Run Eval", type="primary", use_container_width=True, disabled=st.session_state.is_running or not (st.session_state.chosen_instructions or st.session_state.typed_instructions), on_click=_on_run)
     with c2:
-        st.button("⛔ Terminate", type="secondary", use_container_width=True, disabled=not st.session_state.is_running, on_click=_on_terminate)
+        st.button("Terminate", type="secondary", use_container_width=True, disabled=not st.session_state.is_running, on_click=_on_terminate)
 
     # ---- Loader + streamed outputs (replaces terminal UI) ----
     _stream_outputs()

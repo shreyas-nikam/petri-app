@@ -34,6 +34,16 @@ def load_custom_css():
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     
+     a.chip-link {
+            text-decoration: none; /* Remove underline from links */
+        }
+    
+    .score-chip:hover {
+            transform: scale(1.05);
+        }
+    
+    
+    
     .score-critical {
         background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
         color: white;
@@ -59,6 +69,7 @@ def load_custom_css():
         color: white;
     }
     
+    
     /* Chat messages */
     .chat-container {
         background: white;
@@ -81,7 +92,6 @@ def load_custom_css():
         background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
         color: white;
         margin-left: auto;
-        text-align: right;
     }
     
     .message-assistant {
@@ -93,9 +103,7 @@ def load_custom_css():
     .message-system {
         background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
         color: white;
-        margin: 10px auto;
-        text-align: center;
-        max-width: 60%;
+        margin-left: auto;
     }
     
     .message-tool {
@@ -105,7 +113,7 @@ def load_custom_css():
     }
     
     .message-header {
-        font-size: 0.75em;
+        font-size: 1.75em;
         opacity: 0.8;
         margin-bottom: 5px;
         font-weight: 600;
@@ -172,15 +180,7 @@ def load_custom_css():
         margin-right: 8px;
     }
     
-    /* Header styling */
-    .dashboard-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 30px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
+    
     
     /* Info cards */
     .info-card {
@@ -224,6 +224,28 @@ def load_custom_css():
     ::-webkit-scrollbar-thumb:hover {
         background: #555;
     }
+    
+    .chip-tooltip {
+            visibility: hidden;
+            width: 250px;
+            background-color: #262730;
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -125px; /* Half of the width to center */
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .score-chip:hover .chip-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -259,17 +281,16 @@ def get_score_severity(score):
 def display_metadata_cards(metadata):
     """Display metadata in card format."""
     st.markdown('<div class="dashboard-header">', unsafe_allow_html=True)
-    st.markdown("### 📋 Transcript Overview")
-    st.markdown(f"**ID:** `{metadata.get('transcript_id', 'N/A')}`")
+    st.markdown("### Evaluation Summary")
     st.markdown('</div>', unsafe_allow_html=True)
     
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown(f"""
         <div class="info-card">
             <div class="info-card-title">🤖 AUDITOR MODEL</div>
-            <div class="info-card-value">{metadata.get('auditor_model', 'N/A')}</div>
+            <div class="info-card-value">QCreate LLM-as-a-Auditor</div>
         </div>
         """, unsafe_allow_html=True)
     
@@ -284,18 +305,12 @@ def display_metadata_cards(metadata):
     with col3:
         st.markdown(f"""
         <div class="info-card">
-            <div class="info-card-title">📅 CREATED</div>
-            <div class="info-card-value">{metadata.get('created_at', 'N/A')[:10]}</div>
+            <div class="info-card-title">📅 Judge</div>
+            <div class="info-card-value">QCreate LLM-as-a-Judge</div>
         </div>
         """, unsafe_allow_html=True)
     
-    with col4:
-        st.markdown(f"""
-        <div class="info-card">
-            <div class="info-card-title">🔖 VERSION</div>
-            <div class="info-card-value">{metadata.get('version', 'N/A')}</div>
-        </div>
-        """, unsafe_allow_html=True)
+    
     
     st.markdown(f"""
     <div class="info-card" style="border-left-color: #6f42c1;">
@@ -322,39 +337,52 @@ def display_score_chips(scores, score_descriptions):
         score_groups[severity].append((key, value, score_descriptions.get(key, "")))
     
     # Display chips by severity
-    for severity in ['critical', 'high', 'medium', 'low', 'neutral']:
-        if score_groups[severity]:
-            items = score_groups[severity]
-            
-            # Create HTML for chips
-            chips_html = ""
-            for key, value, desc in items:
-                metric_name = key.replace('_', ' ').title()
-                _, icon = get_score_severity(value)
-                chips_html += f"""
-                <span class="score-chip score-{severity}" title="{desc}">
-                    {icon} {metric_name}: {value}
-                </span>
-                """
-            
-            st.markdown(chips_html, unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Add legend
-    with st.expander("📖 Score Legend & Descriptions"):
-        st.markdown("""
-        - 🔴 **Critical (9-10):** Requires immediate attention
-        - 🟠 **High (7-8):** Significant concern
-        - 🟡 **Medium (4-6):** Moderate concern
-        - 🟢 **Low (2-3):** Minor concern
-        - ⚪ **Neutral (1):** No concern
-        """)
+    chips_html_list = []
+    # Sort by score value (descending) for a consistent order
+    for key, value in sorted(scores.items(), key=lambda item: item[1], reverse=True):
+        severity, icon = get_score_severity(value)
+        metric_name = key.replace('_', ' ').title()
+        anchor_id = f"desc-{key}"  # Create a unique ID for linking
         
-        st.markdown("---")
-        st.markdown("### Detailed Descriptions")
-        for key, desc in score_descriptions.items():
-            with st.expander(key.replace('_', ' ').title()):
-                st.write(desc)
+        chips_html_list.append(f"""<a href="#{anchor_id}" class="chip-link">
+                <div class="score-chip score-{severity}">
+                    {icon} {metric_name}: {value}
+                </div>
+            </a>""")
+        
+    print(chips_html_list)
+    
+    # Render all chips in a single container
+    st.markdown(f'<div class="chip-container">{"".join(chips_html_list)}</div>', unsafe_allow_html=True)
+    
+    
+    # # Add legend
+    # st.subheader("📖 Score Legend & Descriptions")
+    # st.markdown("""
+    
+    # 🔴 **Critical (9-10):** Requires immediate attention
+    
+    # 🟠 **High (7-8):** Significant concern
+    
+    # 🟡 **Medium (4-6):** Moderate concern
+    
+    # 🟢 **Low (2-3):** Minor concern
+    
+    # ⚪ **Neutral (1):** No concern
+    # """)
+    
+    st.markdown("---")
+    st.markdown("### Detailed Descriptions")
+    # Sort in the same order for consistency
+    for key, value in sorted(scores.items(), key=lambda item: item[1], reverse=True):
+        anchor_id = f"desc-{key}"  # Use the same unique ID as the target
+        desc = score_descriptions.get(key, "No description available.")
+        
+        # Add an invisible div with the ID right before the expander to act as an anchor
+        st.markdown(f'<div id="{anchor_id}" style="position: relative; top: -80px;"></div>', unsafe_allow_html=True)
+        
+        with st.expander(key.replace('_', ' ').title()):
+            st.write(desc.replace("{{}}", str(value)))
 
 def display_chat_messages(messages, title="Messages"):
     """Display messages in chat format."""
@@ -371,15 +399,10 @@ def display_chat_messages(messages, title="Messages"):
     
     filtered_messages = [m for m in messages if m.get('role') in selected_roles]
     
-    st.markdown('<div class="chat-container">', unsafe_allow_html=True)
     
     for msg in filtered_messages:
         role = msg.get('role', 'unknown')
-        msg_id = msg.get('id', 'N/A')
         content = msg.get('content', '')
-        
-        # Truncate very long messages
-        display_content = content[:500] + "..." if len(content) > 500 else content
         
         role_icons = {
             'system': '🔧 System',
@@ -392,22 +415,12 @@ def display_chat_messages(messages, title="Messages"):
         
         st.markdown(f"""
         <div class="message message-{role}">
-            <div class="message-header">{role_label} · {msg_id[:8]}...</div>
-            <div class="message-content">{display_content}</div>
+            <div class="message-header">{role_label}</div>
+            <div class="message-content">{content.replace("\n# ", "\n### ").replace("\n## ", "\n#### ")}</div>
         </div>
         """, unsafe_allow_html=True)
         
-        # Show full content in expander for long messages
-        if len(content) > 500:
-            with st.expander("Show full content"):
-                st.code(content, language=None)
-        
-        # Show tool calls if present
-        if msg.get('tool_calls'):
-            with st.expander("🔧 Tool Calls"):
-                st.json(msg['tool_calls'])
     
-    st.markdown('</div>', unsafe_allow_html=True)
 
 def display_timeline(events):
     """Display events as an interactive timeline."""
@@ -428,7 +441,6 @@ def display_timeline(events):
     
     filtered_events = [e for e in events if e.get('type') in selected_types]
     
-    st.markdown('<div class="timeline">', unsafe_allow_html=True)
     
     for i, event in enumerate(filtered_events):
         event_type = event.get('type', 'unknown')
@@ -450,24 +462,11 @@ def display_timeline(events):
             'transcript_event': '#28a745',
         }.get(event_type, '#6c757d')
         
-        st.markdown(f"""
-        <div class="timeline-item">
-            <div class="timeline-marker" style="border-color: {type_color};"></div>
-            <div class="timeline-content">
-                <div class="timeline-time">⏰ {time_str} · {date_str}</div>
-                <span class="timeline-type" style="background: {type_color};">{event_type}</span>
-                <div style="margin-top: 10px; font-size: 0.85em; color: #6c757d;">
-                    ID: <code>{event_id[:16]}...</code>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
         
         # Show detailed info in expander
-        with st.expander("🔍 View Details"):
+        with st.expander(f"{event_type.replace('_', ' ').title()}"):
             st.json(event)
     
-    st.markdown('</div>', unsafe_allow_html=True)
 
 def display_highlights(highlights):
     """Display highlights section."""
@@ -484,16 +483,8 @@ def display_highlights(highlights):
             if 'parts' in highlight and highlight['parts']:
                 st.subheader("Parts:")
                 for j, part in enumerate(highlight['parts'], 1):
-                    st.markdown(f"""
-                    <div class="info-card">
-                        <div class="info-card-title">Part {j}</div>
-                        <div class="info-card-value">
-                            Message ID: <code>{part.get('message_id', 'N/A')}</code><br>
-                            Position: {part.get('position', 'N/A')}<br>
-                            Text: {part.get('quoted_text', 'N/A')}
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.write(f"Extract {j} - ")
+                    st.write(f"“ {part.get('quoted_text', 'N/A')} ”")
 
 def display_judge_output(judge_output):
     """Display judge output section."""
@@ -512,25 +503,20 @@ def display_judge_output(judge_output):
     """, unsafe_allow_html=True)
     
     # Justification card
-    st.markdown(f"""
-    <div class="info-card" style="border-left-color: #ffc107;">
-        <div class="info-card-title">💭 JUSTIFICATION</div>
-        <div class="info-card-value">{judge_output.get('justification', 'N/A')}</div>
-    </div>
-    """, unsafe_allow_html=True)
+    if len(judge_output.get('justification', '').strip()) > 0:
+        st.markdown(f"""
+        <div class="info-card" style="border-left-color: #ffc107;">
+            <div class="info-card-title">💭 JUSTIFICATION</div>
+            <div class="info-card-value">{judge_output.get('justification', 'N/A')}</div>
+        </div>
+        """, unsafe_allow_html=True)
     
     # Response in expander
     with st.expander("📄 Full Response"):
-        st.write(judge_output.get('response', 'N/A'))
+        st.markdown(judge_output.get('response', 'N/A'), unsafe_allow_html=True)
 
 def audit_dashboard(directory_path):
     """Main dashboard function."""
-    st.set_page_config(
-        page_title="Audit Transcript Dashboard",
-        page_icon="🔍",
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
     
     # Load custom CSS
     load_custom_css()
