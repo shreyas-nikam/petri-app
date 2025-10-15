@@ -25,7 +25,6 @@ def _worker_eval(log_q: mp.Queue, instructions: list[str], run_dir: str, api_key
     root.handlers = [qh]
 
 
-    api_key = ""
     if not api_key:
         log_q.put(("ERR", f"Missing API key in env var {api_key_env or 'OPENAI_API_KEY'}"))
         log_q.put(("DONE", 1))
