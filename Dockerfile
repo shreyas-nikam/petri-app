@@ -7,8 +7,14 @@ WORKDIR /app
 # Copy requirements (adjust file name if needed)
 COPY requirements.txt /app/
 
+# Install git (required for pip install from git repositories)
+RUN apt-get update && \
+    apt-get install -y git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 # Install dependencies
-RUN pip install --upgrade pip     && pip install -r requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Copy the rest of the application code
 COPY . /app
