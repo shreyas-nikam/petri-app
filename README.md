@@ -174,7 +174,7 @@ docker build -t petri-app .
 ### Run the Container
 
 ```bash
-docker run -p 8501:8501 \
+docker run -p 8554:8501 \
   -e OPENAI_API_KEY=your_api_key_here \
   petri-app
 ```
