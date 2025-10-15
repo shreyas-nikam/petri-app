@@ -9,7 +9,6 @@ from core.streams import QueueHandler, StreamToQueue
 
 def _worker_eval(log_q: mp.Queue, instructions: list[str], run_dir: str, api_key_env: str):
     """Child process: configure models, run eval, stream logs/stdout/stderr to Queue."""
-    # Heavy imports inside child
     try:
         from inspect_ai import eval as inspect_eval
         from inspect_ai.model import get_model, GenerateConfig

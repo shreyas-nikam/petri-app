@@ -9,6 +9,8 @@ from streamlit_autorefresh import st_autorefresh
 
 from core.utils import new_run_dir
 from core.worker import _worker_eval
+from dotenv import load_dotenv
+load_dotenv()
 
 def _collect_instructions() -> list[str]:
     if st.session_state.mode == "Choose from predefined probes":
@@ -41,7 +43,7 @@ def _on_run():
     q = mp_ctx.Queue()
     st.session_state.log_q = q
 
-    api_key_env = os.environ.get("INSPECT_OPENAI_API_KEY_ENV", "OPENAI_API_KEY")
+    api_key_env = os.environ.get("OPENAI_API_KEY", "")
 
     p = mp_ctx.Process(
         target=_worker_eval,
@@ -88,7 +90,9 @@ def _stream_outputs():
 def run_panel():
     c1, c2 = st.columns([1, 1])
     with c1:
-        st.button("Run Eval", type="primary", use_container_width=True, disabled=st.session_state.is_running or not (st.session_state.chosen_instructions or st.session_state.typed_instructions), on_click=_on_run)
+        # disable the button if the chosen mode is predefined and no instructions are selected or if the chosen mode is typed and no instructions are typed or if the process is running
+        is_button_disabled = st.session_state.is_running or (st.session_state.mode == "Choose from predefined probes" and not st.session_state.chosen_instructions) or (st.session_state.mode != "Choose from predefined probes" and not st.session_state.typed_instructions)
+        st.button("Run Eval", type="primary", use_container_width=True, disabled=is_button_disabled, on_click=_on_run)
     with c2:
         st.button("Terminate", type="secondary", use_container_width=True, disabled=not st.session_state.is_running, on_click=_on_terminate)
 
