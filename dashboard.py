@@ -524,7 +524,7 @@ def audit_dashboard(directory_path):
     json_files = load_json_files(directory_path)
     
     if not json_files:
-        st.error(f"No JSON files found in directory: {directory_path}")
+        st.error(f"The run was not completed successfully. Please try again.")
         return
     
     # Sidebar for file selection
@@ -544,6 +544,8 @@ def audit_dashboard(directory_path):
         # Display metadata cards
         if 'metadata' in data:
             display_metadata_cards(data['metadata'])
+            if 'auditor_model' in data['metadata']:
+                del data['metadata']['auditor_model']
         
         st.markdown("---")
         
