@@ -19,14 +19,10 @@ def _collect_instructions() -> list[str]:
     return st.session_state.typed_instructions
 
 def _on_run():
-    print("started run")
     if st.session_state.is_running:
         return
 
-    print("collecting instructions")
     instr = _collect_instructions()
-    print("instructions collected")
-    print(instr)
     if not instr:
         st.error("Please provide at least one instruction (choose or type).")
         return

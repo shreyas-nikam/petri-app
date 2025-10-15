@@ -350,7 +350,6 @@ def display_score_chips(scores, score_descriptions):
                 </div>
             </a>""")
         
-    print(chips_html_list)
     
     # Render all chips in a single container
     st.markdown(f'<div class="chip-container">{"".join(chips_html_list)}</div>', unsafe_allow_html=True)
