@@ -1,5 +1,8 @@
 [server]
-port = 8501
+port = 8554
+baseUrlPath = "petri-app"
+enableCORS = false
+enableXsrfProtection = false
 
 [theme]
 base = "dark"
